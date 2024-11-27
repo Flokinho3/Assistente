@@ -1,8 +1,17 @@
 import tkinter as tk
 import os
-from IA import GEMINI
+import sys
+import ctypes
 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from IA import GEMINI
 IA = GEMINI()
+
+"""Oculta a janela do console no Windows."""
+if os.name == 'nt':  # Verifica se o sistema operacional é Windows
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
 janela = tk.Tk()
 janela.title("Janela Principal")
@@ -15,7 +24,7 @@ def exibir_conversa():
         with open(arquivo, "r") as f:
             return f.read()
     else:
-        conversa_inicial = "Personalidade: Seja voce :3.\n"
+        conversa_inicial = "Personalidade: Voce sera a yuno gasai .\n"
         with open(arquivo, "w") as f:
             f.write(conversa_inicial)
         return conversa_inicial

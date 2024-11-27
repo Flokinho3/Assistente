@@ -1,0 +1,6 @@
+antes de mais nada crie um arquivo chamado  KEY.txt
+logo apos acesse a pagina https://ai.google.dev/gemini-api/docs?hl=pt-br 
+clique em "Gerar chave de API" 
+Siga as istruçoes e copie a chave gerada
+cole no arquivo KEY.txt
+depos inicie o programa
