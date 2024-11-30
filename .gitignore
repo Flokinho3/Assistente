@@ -1,8 +1,20 @@
+# Ignorar todos os arquivos de API
 KEY.txt
 
+# Ignorar as conversas pessoais
 Conversas/
+
+# Ignorar arquivos padrão
 Sistema/Verificado.txt
 
+# Ignorar arquivos de execução gerados pelo Python
 __pycache__/
 
+# Ignorar o ambiente virtual do Python
 .venv/
+
+# Ignorar comandos pessoais
+SEM_GUI/Comandos/
+
+# EXCEÇÃO: Não ignorar o arquivo INFOR.txt dentro de SEM_GUI/Comandos/
+!SEM_GUI/Comandos/INFOR.txt

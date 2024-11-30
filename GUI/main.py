@@ -183,7 +183,6 @@ class GEMINIApp:
 
         ttk.Button(janela_apagar, text="Apagar", command=apagar).pack(pady=10)
 
-
 # Executa o programa
 janela = tk.Tk()
 app = GEMINIApp(janela)

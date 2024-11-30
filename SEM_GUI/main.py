@@ -94,7 +94,9 @@ def ativar_audio():
                 comandos = chamar_comandos()
                 texto_comando = f"Caso solicitado pode usar comandos internos exemplo: '$%texte%$'. A lista de comandos internos é: {comandos}. Responda: {texto}"
                 resposta = gemini.enviar(texto_comando)
-                
+
+                print(f"Resposta: {texto_comando}")
+                print(f"Resposta: {resposta}")
                 filtro_comando(resposta)
                 if resposta:
                     resposta = resposta.replace("$%", "").replace("%$", "")
