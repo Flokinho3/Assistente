@@ -8,10 +8,11 @@ from IA import GEMINI
 
 IA = GEMINI()
 
-# Constantes
-FILE_CONVERSA = "Conversas/"
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+FILE_CONVERSA = os.path.join(BASE_DIR, "Conversas")
 if not os.path.exists(FILE_CONVERSA):
     os.makedirs(FILE_CONVERSA)
+
 
 class GEMINIApp:
     def __init__(self, root):

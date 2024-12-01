@@ -14,7 +14,8 @@ import re
 from queue import Queue
 
 # Caminho para os comandos
-FILE_COMANDOS = os.path.join("SEM_GUI", "Comandos") + os.sep
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+FILE_COMANDOS = os.path.join(BASE_DIR, "SEM_GUI", "Comandos") + os.sep
 audio_ativo = False  # Controle do áudio
 
 # Adiciona o diretório onde o script GEMINI está localizado
@@ -31,8 +32,8 @@ def ocultar_console():
 
 def cria_imagem():
     """Cria ou carrega a imagem do ícone da bandeja."""
+    img_path = os.path.join(BASE_DIR, "Sistema", "Fundo_barra.png")
     try:
-        img_path = "Sistema/Fundo_barra.png"
         image = Image.open(img_path)
     except FileNotFoundError:
         image = Image.new('RGB', (64, 64), color=(255, 0, 0))  # Ícone simples em vermelho
@@ -58,15 +59,18 @@ def fala_gemini(texto):
     engine = pyttsx3.init()
     engine.setProperty('rate', 150)
     engine.setProperty('volume', 1)
-    
-    texto = texto.replace("**", "").replace("* **", "")  # Remove caracteres indesejados
 
-    # Função que coloca a fala na fila
     def speak():
         engine.say(texto)
         engine.runAndWait()
 
-    fala_fila.put(speak)  # Coloca a função de fala na fila
+    # Coloca a função de fala na fila
+    fala_fila.put(speak)
+
+    # Se o processamento da fila ainda não está ativo, inicie-o
+    if not any(thread.name == "FalaProcessor" for thread in threading.enumerate()):
+        threading.Thread(target=processar_fala, name="FalaProcessor", daemon=True).start()
+
 
 def processar_fala():
     """Processa as falas da fila, uma por vez."""
@@ -127,8 +131,13 @@ def desativar_audio():
 
 def sair(icon, item):
     """Sair quando o item for clicado."""
+    global audio_ativo
     print("Saindo...")
+    audio_ativo = False  # Sinaliza para parar o reconhecimento de áudio
+    fala_fila.put(None)  # Finaliza o processamento da fila
     icon.stop()
+    sys.exit()
+
 
 def on_activate_fala(icon, item):
     """Ativa o reconhecimento de fala."""
@@ -140,18 +149,22 @@ def informacoes(icon, item):
     - Ctrl + Alt + A: Ativa o reconhecimento de áudio.
     - Ctrl + Alt + Z: Interrompe a fala do programa.
     """
-    file_path = "informacoes.txt"
+    file_path = os.path.join(BASE_DIR, "informacoes.txt")
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(INFOR)
     
-    os.startfile(file_path)
+    if os.name == 'nt':
+        os.startfile(file_path)
+    else:
+        subprocess.run(['xdg-open', file_path])
+
 
 class SistemaAssistente:
     def __init__(self):
         self.icon = None
 
     def criar_tray_icon(self):
-        """Cria o ícone da bandeja do sistema."""
+        """Cria e gerencia o ícone da bandeja."""
         icon_image = cria_imagem()
         self.icon = pystray.Icon("GEMINI Assistant", icon_image, menu=(
             item("Ativar Fala", on_activate_fala),
@@ -163,8 +176,11 @@ class SistemaAssistente:
 
     def iniciar_reconhecimento_audio(self):
         """Inicia o processo de reconhecimento de áudio e bandeja."""
-        threading.Thread(target=processar_fala, daemon=True).start()
-        threading.Thread(target=self.criar_tray_icon, daemon=True).start()
+        if not any(thread.name == "FalaProcessor" for thread in threading.enumerate()):
+            threading.Thread(target=processar_fala, name="FalaProcessor", daemon=True).start()
+
+        if not any(thread.name == "TrayIconThread" for thread in threading.enumerate()):
+            threading.Thread(target=self.criar_tray_icon, name="TrayIconThread", daemon=True).start()
 
     def loop_principal(self):
         """Loop principal para controle de ativação do áudio"""
