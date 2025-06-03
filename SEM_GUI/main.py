@@ -15,7 +15,7 @@ from queue import Queue
 
 # Caminho para os comandos
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-FILE_COMANDOS = os.path.join(BASE_DIR, "SEM_GUI", "Comandos") + os.sep
+FILE_COMANDOS = os.path.join(BASE_DIR, "Comandos") + os.sep
 audio_ativo = False  # Controle do áudio
 
 # Adiciona o diretório onde o script GEMINI está localizado
