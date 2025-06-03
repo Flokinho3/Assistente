@@ -82,16 +82,16 @@ class GEMINIApp:
 
             # Salva e processa a conversa
             if self.Chat_atual:
-                with open(FILE_CONVERSA + self.Chat_atual, "a") as f:
+                with open(os.path.join(FILE_CONVERSA, self.Chat_atual), "a") as f:
                     f.write(f"Você: {mensagem}\n")
 
-                with open(FILE_CONVERSA + self.Chat_atual, "r") as f:
+                with open(os.path.join(FILE_CONVERSA, self.Chat_atual), "r") as f:
                     conversa = f.readlines()
 
                 resposta = IA.enviar(conversa)
                 self.texto.insert("end", f"GEMINI: {resposta}\n")
 
-                with open(FILE_CONVERSA + self.Chat_atual, "a") as f:
+                with open(os.path.join(FILE_CONVERSA, self.Chat_atual), "a") as f:
                     f.write(f"GEMINI: {resposta}\n")
         else:
             messagebox.showinfo("Erro", "Mensagem não pode estar vazia!")
@@ -115,11 +115,11 @@ class GEMINIApp:
             if not nome_conversa:
                 messagebox.showinfo("Erro", "Nome da conversa não pode ser vazio!")
                 return
-            if os.path.exists(FILE_CONVERSA + nome_conversa + ".txt"):
+            if os.path.exists(os.path.join(FILE_CONVERSA, nome_conversa + ".txt")):
                 messagebox.showinfo("Erro", "Já existe uma conversa com esse nome!")
                 return
 
-            with open(FILE_CONVERSA + nome_conversa + ".txt", "w") as f:
+            with open(os.path.join(FILE_CONVERSA, nome_conversa + ".txt"), "w") as f:
                 f.write(personalidade.get("1.0", "end").strip())
 
             self.Chat_atual = nome_conversa + ".txt"
@@ -147,7 +147,7 @@ class GEMINIApp:
 
         def abrir():
             selecionado = lista.get(lista.curselection())
-            with open(FILE_CONVERSA + selecionado, "r") as f:
+            with open(os.path.join(FILE_CONVERSA, selecionado), "r") as f:
                 conteudo = f.read()
 
             self.Chat_atual = selecionado
@@ -175,7 +175,7 @@ class GEMINIApp:
 
         def apagar():
             selecionado = lista.get(lista.curselection())
-            os.remove(FILE_CONVERSA + selecionado)
+            os.remove(os.path.join(FILE_CONVERSA, selecionado))
             if self.Chat_atual == selecionado:
                 self.Chat_atual = None
                 self.texto.delete("1.0", "end")
