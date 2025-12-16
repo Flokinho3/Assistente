@@ -1,74 +1,73 @@
-import os
+import IA.System.Conn as IA
+import IA.System.Comandos.Filtro as Filtro
 import subprocess
-from tkinter import messagebox
+import os
+from dotenv import load_dotenv
+import re
 
-# Constantes
-PASTA_SISTEMA = "Sistema"
-ARQUIVO_VERIFICADO = "Verificado.txt"
-ARQUIVO_REQUERIMENTOS = "requirements.txt"
+load_dotenv()
 
-# Obtém o diretório absoluto do script atual
-DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
-PASTA_SISTEMA_ABS = os.path.join(DIRETORIO_ATUAL, PASTA_SISTEMA)
+model = os.getenv("MODEL", "ministral-3:3b")
+temperature = float(os.getenv("TEMPERATURE", "0.3"))
 
-
-def instalar_dependencias():
-    """
-    Instala dependências do arquivo requirements.txt.
-    """
-    try:
-        print("Instalando dependências...")
-        caminho_requisitos = os.path.join(PASTA_SISTEMA_ABS, ARQUIVO_REQUERIMENTOS)
-        subprocess.check_call(["pip", "install", "-r", caminho_requisitos])
-        with open(os.path.join(PASTA_SISTEMA_ABS, ARQUIVO_VERIFICADO), "w") as file:
-            file.write("Verificado")
-        print("Dependências instaladas com sucesso!")
-        messagebox.showinfo("Aviso", "Dependências instaladas com sucesso!")
-    except Exception as e:
-        print(f"Erro ao instalar dependências: {e}")
-        messagebox.showerror("Erro", f"Falha ao instalar dependências: {e}")
+filtro = Filtro.Filtro()
 
 
-def iniciar_sistema():
-    """
-    Pergunta ao usuário como iniciar o sistema e executa o comando correspondente.
-    """
-    resposta = messagebox.askquestion("Aviso", "Deseja iniciar o sistema com janela?")
-    comando = (
-        f"python {os.path.join(DIRETORIO_ATUAL, 'GUI', 'main.py')}"
-        if resposta == "yes"
-        else f"python {os.path.join(DIRETORIO_ATUAL, 'SEM_GUI', 'main.py')}"
-    )
-    try:
-        subprocess.run(comando, shell=True)
-    except Exception as e:
-        print(f"Erro ao iniciar o sistema: {e}")
-        messagebox.showerror("Erro", f"Falha ao iniciar o sistema: {e}")
+FORBIDDEN_PATTERNS = [
+    "reboot",
+    "shutdown",
+    "poweroff",
+    "halt",
+    "rm -rf /",
+    "rm -rf /*",
+]
 
+
+def comando_bloqueado(cmd: str) -> bool:
+    """Retorna True se o comando contiver padrões perigosos."""
+    cmd_lower = cmd.lower()
+    for pattern in FORBIDDEN_PATTERNS:
+        if pattern in cmd_lower:
+            return True
+    return False
 
 def main():
-    print("Iniciando sistema...")
-    
-    # Verifica se a pasta do sistema existe
-    if not os.path.exists(PASTA_SISTEMA_ABS):
-        os.makedirs(PASTA_SISTEMA_ABS)
+    ia_instance = IA.IA(model=model, temperature=temperature)
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ['exit', 'quit']:
+            print("Ate logo!")
+            break
+        
+        # Streaming em tempo real
+        print("IA:", end=" ", flush=True)
+        response = ""
+        for chunk in ia_instance.generate_response_stream(user_input):
+            print(chunk, end="", flush=True)
+            response += chunk
+        print()  # Nova linha após a resposta completa
+        
+        comandos_encontrados = filtro.Filtro_texto_IA(response)
 
-    # Verifica se o arquivo requirements.txt existe
-    caminho_requisitos = os.path.join(PASTA_SISTEMA_ABS, ARQUIVO_REQUERIMENTOS)
-    if not os.path.exists(caminho_requisitos):
-        messagebox.showinfo("Aviso", "Dependências não encontradas!\nNão é possível garantir o funcionamento do sistema.")
-        messagebox.showinfo("Aviso", "Recomendado o uso do Python 3.11 para evitar erros de compatibilidade.")
-
-    # Verifica se já foi instalado
-    caminho_verificado = os.path.join(PASTA_SISTEMA_ABS, ARQUIVO_VERIFICADO)
-    if not os.path.exists(caminho_verificado):
-        messagebox.showinfo("Aviso", "Instalando dependências...")
-        instalar_dependencias()
-    else:
-        messagebox.showinfo("Aviso", "Dependências já instaladas!")
-
-    iniciar_sistema()
-
+        # Detecta e executa comandos do formato [Terminal:["COMANDO_COMPLETO"]]
+        # Ex.: [Terminal:["ls -l Documentos"]]
+        # O regex já captura apenas o conteúdo entre aspas (inclusive comandos multilinha).
+        terminal_cmds = re.findall(r'\[Terminal:\["(.*?)"\]\]', response, re.DOTALL)
+        for cmd in terminal_cmds:
+            # Verifica se o comando é seguro antes de executar
+            if comando_bloqueado(cmd):
+                print(f"Comando bloqueado por segurança (main.py): {cmd}")
+                continue
+            # Executa usando shell=True para suportar comandos complexos (heredoc, pipes, etc)
+            try:
+                print("Executando comando:", cmd)
+                completed = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                if completed.stdout and completed.stdout.strip():
+                    print(completed.stdout.strip())
+                if completed.stderr and completed.stderr.strip():
+                    print("Erro:", completed.stderr.strip())
+            except Exception as e:
+                print("Falha ao executar comando:", e)
 
 if __name__ == "__main__":
     main()
