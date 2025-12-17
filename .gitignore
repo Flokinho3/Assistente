@@ -12,3 +12,4 @@ dist/
 *.env
 IA/Persona/memorias_data.json
 IA/Persona/Memorias.json
+.github/

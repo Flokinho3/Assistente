@@ -1,5 +1,4 @@
 import os
-import json
 import re
 import subprocess
 
@@ -24,44 +23,25 @@ def comando_bloqueado(cmd: str) -> bool:
 
 
 class Filtro:
-   
     def __init__(self):
-       self.File_Filtro = os.path.join(os.path.dirname(__file__), 'comandos.json')
-       self.conteudo_arquivo = self._get_conteudo_arquivo()
-   
-    def Filtro_texto_IA(self, texto):
-       """
-       Docstring para Filtro_texto_IA
-       Funçao que recebe o texto da IA e procura:
-       "[{String_Comando}: ["Parâmetro1", "Parâmetro2", ...]}]"
-       caso encontre, retorna uma lista com os comandos e parâmetros encontrados.
-       
-       :param self: Instância da classe Filtro
-       :param texto: Texto retornado pela IA
-       """
-       comandos_encontrados = []
-       # Regex para encontrar padrões como [Terminal:["ls"]]
-       pattern = r'\[(\w+):\s*\[([^\]]+)\]\]'
-       matches = re.findall(pattern, texto)
-       for match in matches:
-           nome_comando = match[0]
-           params_str = match[1]
-           # Parse os parâmetros
-           params = [p.strip().strip('"').strip("'") for p in params_str.split(',')]
-           # Verifica se o comando existe e se os parâmetros são válidos
-           if nome_comando in self.conteudo_arquivo:
-               valid_params = self.conteudo_arquivo[nome_comando]
-               # Filtra apenas parâmetros válidos
-               filtered_params = [p for p in params if p in valid_params]
-               if filtered_params:
-                   comandos_encontrados.append({nome_comando: filtered_params})
-       return comandos_encontrados
+        # Mantemos a classe simples: apenas filtra padrões e bloqueia perigosos.
+        pass
 
-    def _get_conteudo_arquivo(self):
-       with open(self.File_Filtro, 'r', encoding='utf-8') as file:
-           return json.load(file)
+    def Filtro_texto_IA(self, texto):
+        """Extrai blocos de comando do formato [Terminal:["COMANDO_COMPLETO"]].
+
+        - Não há whitelist: qualquer comando é retornado, apenas bloqueamos padrões perigosos.
+        - Retorna lista de dicts: [{"Terminal": ["cmd1", "cmd2", ...]}]
+        """
+        comandos_encontrados = []
+        pattern = r'\[(\w+):\["(.*?)"\]\]'
+        matches = re.findall(pattern, texto, re.DOTALL)
+        for nome_comando, cmd_str in matches:
+            if nome_comando.lower() == "terminal":
+                comandos_encontrados.append({"Terminal": [cmd_str]})
+        return comandos_encontrados
        
-    def executar_comandos(self,comandos_encontrados):
+    def executar_comandos(self, comandos_encontrados):
         """Executa os comandos encontrados no terminal"""
         for comando_dict in comandos_encontrados:
             for tipo, comandos in comando_dict.items():
